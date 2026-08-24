@@ -1,3 +1,8 @@
 spring:
+  ai:
+    ollama:
+      base-url: http://localhost:11434
+      chat:
+        model: llama3.1:8b
   application:
     name: codesentry
