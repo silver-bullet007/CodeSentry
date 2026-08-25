@@ -1,8 +1,9 @@
 spring:
   ai:
-    ollama:
-      base-url: http://localhost:11434
-      chat:
-        model: llama3.1:8b
-  application:
-    name: codesentry
+    model:
+      chat: google-genai
+    google:
+      genai:
+        api-key: ${GEMINI_API_KEY}
+        chat:
+          model: gemini-2.5-flash
