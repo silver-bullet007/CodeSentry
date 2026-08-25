@@ -1,5 +1,6 @@
 package com.codesentry.codesentry.controller;
 
+import com.codesentry.codesentry.model.CodeReview;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,5 +20,17 @@ public class ChatController {
                 .user(message)
                 .call()
                 .content();
+    }
+
+    @GetMapping("/review")
+    public CodeReview review(@RequestBody String code) {
+
+        return chatClient.prompt().system("""
+                You are a senior Java code reviewer. Analyze the given code
+                snippet for bugs, code smells, and best-practice violations.
+                Be specific and concise. If the code is genuinely fine,
+                say so — do not invent issues.
+                """).user(code).call().entity(CodeReview.class);
+
     }
 }
