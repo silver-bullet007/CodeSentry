@@ -1,4 +1,6 @@
 spring:
+  application:
+    name: codesentry
   ai:
     model:
       chat: google-genai
@@ -6,4 +8,4 @@ spring:
       genai:
         api-key: ${GEMINI_API_KEY}
         chat:
-          model: gemini-2.5-flash
+          model: gemini-3.6-flash
