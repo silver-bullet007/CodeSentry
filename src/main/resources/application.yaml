@@ -9,3 +9,6 @@ spring:
         api-key: ${GEMINI_API_KEY}
         chat:
           model: gemini-3.6-flash
+  logging:
+    level:
+      org.springframework.ai: DEBUG

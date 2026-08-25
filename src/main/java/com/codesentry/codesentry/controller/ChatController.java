@@ -4,6 +4,7 @@ import com.codesentry.codesentry.model.CodeReview;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.ai.google.genai.GoogleGenAiChatOptions;
+import org.springframework.ai.chat.prompt.ChatOptions;
 
 @RestController
 @RequestMapping("/api")
@@ -35,7 +36,8 @@ public class ChatController {
                 Respond with exactly one JSON object matching the required
                 schema. Do not include any text, explanation, or additional
                 JSON before or after the object.
-                """).user(code).options(GoogleGenAiChatOptions.builder().responseMimeType("application/json").build())
+                """).user(code)
+                .options(GoogleGenAiChatOptions.builder().responseMimeType("application/json"))
                 .call().entity(CodeReview.class);
 
     }
