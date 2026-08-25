@@ -30,6 +30,10 @@ public class ChatController {
                 snippet for bugs, code smells, and best-practice violations.
                 Be specific and concise. If the code is genuinely fine,
                 say so — do not invent issues.
+
+                Respond with exactly one JSON object matching the required
+                schema. Do not include any text, explanation, or additional
+                JSON before or after the object.
                 """).user(code).call().entity(CodeReview.class);
 
     }
