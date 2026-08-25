@@ -22,7 +22,7 @@ public class ChatController {
                 .content();
     }
 
-    @GetMapping("/review")
+    @PostMapping("/review")
     public CodeReview review(@RequestBody String code) {
 
         return chatClient.prompt().system("""
