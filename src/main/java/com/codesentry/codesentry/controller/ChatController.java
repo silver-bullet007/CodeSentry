@@ -2,6 +2,19 @@ package com.codesentry.codesentry.controller;
 
 import com.codesentry.codesentry.model.CodeReview;
 import com.codesentry.codesentry.tools.FileTools;
+
+import java.io.IOException;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Map;
+import org.springframework.ai.document.Document;
+import org.springframework.ai.transformer.splitter.TokenTextSplitter;
+import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.web.bind.annotation.PostMapping;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.stream.Stream;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.ai.google.genai.GoogleGenAiChatOptions;
@@ -11,9 +24,11 @@ import org.springframework.ai.google.genai.GoogleGenAiChatOptions;
 public class ChatController {
 
     private final ChatClient chatClient;
+    private final VectorStore vectorStore;
 
-    public ChatController(ChatClient.Builder chatClientBuilder, FileTools fileTools) {
+    public ChatController(ChatClient.Builder chatClientBuilder, FileTools fileTools, VectorStore vectorStore) {
         this.chatClient = chatClientBuilder.defaultTools(fileTools).build();
+        this.vectorStore = vectorStore;
     }
 
     @GetMapping("/chat")
@@ -40,5 +55,35 @@ public class ChatController {
                 .options(GoogleGenAiChatOptions.builder().responseMimeType("application/json"))
                 .call().entity(CodeReview.class);
 
+    }
+
+    @PostMapping("/ingest")
+    public String ingest() {
+        Path baseDir = Paths.get("src/main/java/com/codesentry").toAbsolutePath().normalize();
+
+        List<Document> documents = new ArrayList<>();
+
+        try (Stream<Path> paths = Files.walk(baseDir)) {
+            paths.filter(p -> p.toString().endsWith(".java"))
+                    .forEach(path -> {
+                        try {
+                            String content = Files.readString(path);
+                            String relativePath = baseDir.relativize(path).toString();
+                            Document doc = new Document(content, Map.of("source", relativePath));
+                            documents.add(doc);
+                        } catch (IOException e) {
+                            // skip unreadable files
+                        }
+                    });
+        } catch (IOException e) {
+            return "Error walking directory: " + e.getMessage();
+        }
+
+        TokenTextSplitter splitter = TokenTextSplitter.builder().build();
+        List<Document> chunks = splitter.apply(documents);
+
+        vectorStore.add(chunks);
+
+        return "Ingested " + documents.size() + " files as " + chunks.size() + " chunks.";
     }
 }
