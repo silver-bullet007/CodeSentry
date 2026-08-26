@@ -72,7 +72,8 @@ public class ChatController {
                 You are a classifier. Decide if answering the following
                 message well requires looking up specific implementation
                 details from a Java codebase...
-                Respond with exactly YES or NO.
+
+                Return YES or NO as a JSON STRING i.e "YES" , "NO"
                 """).user(message).options(GoogleGenAiChatOptions.builder().temperature(0.0)).call()
                 .entity(RagDecision.class);
 
