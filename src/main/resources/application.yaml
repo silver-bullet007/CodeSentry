@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/postgres
+    url: jdbc:postgresql://localhost:5434/postgres
     username: postgres
     password: postgres
   application:
@@ -11,8 +11,10 @@ spring:
     google:
       genai:
         embedding:
+          api-key: ${GEMINI_API_KEY}
           text:
             model: gemini-embedding-001
+            dimensions: 768
         api-key: ${GEMINI_API_KEY}
         chat:
           model: gemini-3.5-flash-lite
@@ -20,7 +22,7 @@ spring:
       pgvector:
         index-type: HNSW
         distance-type: COSINE_DISTANCE
-        dimensions: 3072
+        dimensions: 768
         initialize-schema: true
 logging:
   level:
