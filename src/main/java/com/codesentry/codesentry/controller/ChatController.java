@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Map;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
+import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 
 import java.nio.file.Files;
@@ -21,6 +22,7 @@ import org.springframework.ai.google.genai.GoogleGenAiChatOptions;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
+import org.springframework.ai.vectorstore.SearchRequest;
 
 @RestController
 @RequestMapping("/api")
@@ -33,7 +35,9 @@ public class ChatController {
             ChatMemory chatMemory) {
         this.chatClient = chatClientBuilder.defaultTools(fileTools)
                 .defaultAdvisors(MessageChatMemoryAdvisor.builder(chatMemory).build(),
-                        QuestionAnswerAdvisor.builder(vectorStore).build())
+                        QuestionAnswerAdvisor.builder(vectorStore)
+                                .searchRequest(SearchRequest.builder().similarityThreshold(0.75).topK(4).build())
+                                .build())
                 .build();
         this.vectorStore = vectorStore;
     }
