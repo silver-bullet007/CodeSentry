@@ -33,9 +33,10 @@ public class ChatController {
     private final ChatClient chatClient;
     private final VectorStore vectorStore;
     private final Advisor questionAnswerAdvisor;
+    private final Advisor messageChatMemoryAdvisor;
 
     public ChatController(ChatClient.Builder chatClientBuilder, FileTools fileTools, VectorStore vectorStore,
-            ChatMemory chatMemory, Advisor questionAnsweAdvisor) {
+            ChatMemory chatMemory) {
 
         PromptTemplate qaPromptTemplate = PromptTemplate.builder()
                 .template("""
@@ -54,11 +55,11 @@ public class ChatController {
                         Question: {query}
                         """)
                 .build();
+        this.messageChatMemoryAdvisor = MessageChatMemoryAdvisor.builder(chatMemory).build();
         this.questionAnswerAdvisor = QuestionAnswerAdvisor.builder(vectorStore)
                 .searchRequest(SearchRequest.builder().similarityThreshold(0.5).topK(4).build())
                 .promptTemplate(qaPromptTemplate).build();
         this.chatClient = chatClientBuilder.defaultTools(fileTools)
-                .defaultAdvisors(MessageChatMemoryAdvisor.builder(chatMemory).build())
                 .build();
         this.vectorStore = vectorStore;
     }
@@ -76,6 +77,7 @@ public class ChatController {
                 .entity(RagDecision.class);
 
         var promptSpec = chatClient.prompt()
+                .advisors(messageChatMemoryAdvisor)
                 .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, conversationId));
 
         if (requireRetrieval == RagDecision.YES) {
