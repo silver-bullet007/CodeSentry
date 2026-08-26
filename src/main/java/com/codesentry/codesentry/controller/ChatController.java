@@ -23,6 +23,8 @@ import org.springframework.ai.google.genai.GoogleGenAiChatOptions;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
+import org.springframework.ai.chat.client.advisor.api.Advisor;
+import com.codesentry.codesentry.model.RagDecision;
 
 @RestController
 @RequestMapping("/api")
@@ -30,9 +32,11 @@ public class ChatController {
 
     private final ChatClient chatClient;
     private final VectorStore vectorStore;
+    private final Advisor questionAnswerAdvisor;
 
     public ChatController(ChatClient.Builder chatClientBuilder, FileTools fileTools, VectorStore vectorStore,
-            ChatMemory chatMemory) {
+            ChatMemory chatMemory, Advisor questionAnsweAdvisor) {
+
         PromptTemplate qaPromptTemplate = PromptTemplate.builder()
                 .template("""
                         You are an assistant for a Java codebase. You have access to
@@ -50,12 +54,11 @@ public class ChatController {
                         Question: {query}
                         """)
                 .build();
+        this.questionAnswerAdvisor = QuestionAnswerAdvisor.builder(vectorStore)
+                .searchRequest(SearchRequest.builder().similarityThreshold(0.5).topK(4).build())
+                .promptTemplate(qaPromptTemplate).build();
         this.chatClient = chatClientBuilder.defaultTools(fileTools)
-                .defaultAdvisors(MessageChatMemoryAdvisor.builder(chatMemory).build(),
-                        QuestionAnswerAdvisor.builder(vectorStore)
-                                .searchRequest(SearchRequest.builder().similarityThreshold(0.5).topK(4).build())
-                                .promptTemplate(qaPromptTemplate)
-                                .build())
+                .defaultAdvisors(MessageChatMemoryAdvisor.builder(chatMemory).build())
                 .build();
         this.vectorStore = vectorStore;
     }
@@ -63,11 +66,23 @@ public class ChatController {
     @GetMapping("/chat")
     public String chat(@RequestParam String message,
             @RequestParam(defaultValue = "default-session") String conversationId) {
-        return chatClient.prompt()
-                .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, conversationId))
-                .user(message)
-                .call()
-                .content();
+
+        RagDecision requireRetrieval = chatClient.prompt().system("""
+                You are a classifier. Decide if answering the following
+                message well requires looking up specific implementation
+                details from a Java codebase...
+                Respond with exactly YES or NO.
+                """).user(message).options(GoogleGenAiChatOptions.builder().temperature(0.0)).call()
+                .entity(RagDecision.class);
+
+        var promptSpec = chatClient.prompt()
+                .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, conversationId));
+
+        if (requireRetrieval == RagDecision.YES) {
+            promptSpec.advisors(questionAnswerAdvisor);
+        }
+
+        return promptSpec.user(message).call().content();
     }
 
     @PostMapping("/review")
