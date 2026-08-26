@@ -18,6 +18,9 @@ import java.util.stream.Stream;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.ai.google.genai.GoogleGenAiChatOptions;
+import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
+import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
 
 @RestController
 @RequestMapping("/api")
@@ -26,8 +29,12 @@ public class ChatController {
     private final ChatClient chatClient;
     private final VectorStore vectorStore;
 
-    public ChatController(ChatClient.Builder chatClientBuilder, FileTools fileTools, VectorStore vectorStore) {
-        this.chatClient = chatClientBuilder.defaultTools(fileTools).build();
+    public ChatController(ChatClient.Builder chatClientBuilder, FileTools fileTools, VectorStore vectorStore,
+            ChatMemory chatMemory) {
+        this.chatClient = chatClientBuilder.defaultTools(fileTools)
+                .defaultAdvisors(MessageChatMemoryAdvisor.builder(chatMemory).build(),
+                        QuestionAnswerAdvisor.builder(vectorStore).build())
+                .build();
         this.vectorStore = vectorStore;
     }
 
