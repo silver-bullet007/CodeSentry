@@ -1,4 +1,8 @@
 spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/postgres
+    username: postgres
+    password: postgres
   application:
     name: codesentry
   ai:
@@ -6,9 +10,18 @@ spring:
       chat: google-genai
     google:
       genai:
+        embedding:
+          text:
+            model: gemini-embedding-001
         api-key: ${GEMINI_API_KEY}
         chat:
           model: gemini-3.5-flash-lite
+    vectorstore:
+      pgvector:
+        index-type: HNSW
+        distance-type: COSINE_DISTANCE
+        dimensions: 3072
+        initialize-schema: true
 logging:
   level:
     org.springframework.ai: DEBUG
