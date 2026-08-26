@@ -1,10 +1,10 @@
 package com.codesentry.codesentry.controller;
 
 import com.codesentry.codesentry.model.CodeReview;
+import com.codesentry.codesentry.tools.FileTools;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.ai.google.genai.GoogleGenAiChatOptions;
-import org.springframework.ai.chat.prompt.ChatOptions;
 
 @RestController
 @RequestMapping("/api")
@@ -12,8 +12,8 @@ public class ChatController {
 
     private final ChatClient chatClient;
 
-    public ChatController(ChatClient.Builder chatClientBuilder) {
-        this.chatClient = chatClientBuilder.build();
+    public ChatController(ChatClient.Builder chatClientBuilder, FileTools fileTools) {
+        this.chatClient = chatClientBuilder.defaultTools(fileTools).build();
     }
 
     @GetMapping("/chat")
