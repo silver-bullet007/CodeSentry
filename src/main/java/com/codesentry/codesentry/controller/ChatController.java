@@ -10,7 +10,7 @@ import java.util.Map;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.VectorStore;
-import org.springframework.web.bind.annotation.PostMapping;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -39,8 +39,10 @@ public class ChatController {
     }
 
     @GetMapping("/chat")
-    public String chat(@RequestParam String message) {
+    public String chat(@RequestParam String message,
+            @RequestParam(defaultValue = "default-session") String conversationId) {
         return chatClient.prompt()
+                .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, conversationId))
                 .user(message)
                 .call()
                 .content();
