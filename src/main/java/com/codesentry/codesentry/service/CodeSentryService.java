@@ -15,11 +15,15 @@ import org.springframework.stereotype.Service;
 public class CodeSentryService {
 
     private final ChatClient chatClient;
+    private final ChatClient classifierChatClient;
     private final Advisor questionAnswerAdvisor;
     private final Advisor messageChatMemoryAdvisor;
 
-    public CodeSentryService(ChatClient chatClient, @Qualifier("questionAnswerAdvisor") Advisor questionAnswerAdvisor,
+    public CodeSentryService(@Qualifier("chatClient") ChatClient chatClient,
+            @Qualifier("classifierChatClient") ChatClient classifierChatClient,
+            @Qualifier("questionAnswerAdvisor") Advisor questionAnswerAdvisor,
             @Qualifier("messageChatmemoryAdvisor") Advisor messageChatMemoryAdvisor) {
+        this.classifierChatClient = classifierChatClient;
         this.chatClient = chatClient;
         this.questionAnswerAdvisor = questionAnswerAdvisor;
         this.messageChatMemoryAdvisor = messageChatMemoryAdvisor;
@@ -30,7 +34,7 @@ public class CodeSentryService {
             @ToolParam(description = "The question to ask") String message,
             @ToolParam(description = "A unique ID to keep this conversation's history separate from others") String conversationId) {
 
-        RagDecision decision = chatClient.prompt()
+        RagDecision decision = classifierChatClient.prompt()
                 .system("""
                         You are a classifier. Decide if answering the following
                         message well requires looking up specific implementation

@@ -21,6 +21,11 @@ public class ChatClientConfig {
     }
 
     @Bean
+    public ChatClient classifierChatClient(ChatClient.Builder chatClientBuilder, FileTools fileTools) {
+        return chatClientBuilder.build();
+    }
+
+    @Bean
     public Advisor messageChatmemoryAdvisor(ChatMemory chatMemory) {
         return MessageChatMemoryAdvisor.builder(chatMemory).build();
     }
