@@ -15,15 +15,15 @@ import org.springframework.stereotype.Service;
 public class CodeSentryService {
 
     private final ChatClient chatClient;
-    private final ChatClient classifierChatClient;
+    private final ChatClient toolFreeChatClient;
     private final Advisor questionAnswerAdvisor;
     private final Advisor messageChatMemoryAdvisor;
 
     public CodeSentryService(@Qualifier("chatClient") ChatClient chatClient,
-            @Qualifier("classifierChatClient") ChatClient classifierChatClient,
+            @Qualifier("toolFreeChatClient") ChatClient toolFreeChatClient,
             @Qualifier("questionAnswerAdvisor") Advisor questionAnswerAdvisor,
             @Qualifier("messageChatmemoryAdvisor") Advisor messageChatMemoryAdvisor) {
-        this.classifierChatClient = classifierChatClient;
+        this.toolFreeChatClient = toolFreeChatClient;
         this.chatClient = chatClient;
         this.questionAnswerAdvisor = questionAnswerAdvisor;
         this.messageChatMemoryAdvisor = messageChatMemoryAdvisor;
@@ -34,7 +34,7 @@ public class CodeSentryService {
             @ToolParam(description = "The question to ask") String message,
             @ToolParam(description = "A unique ID to keep this conversation's history separate from others") String conversationId) {
 
-        RagDecision decision = classifierChatClient.prompt()
+        RagDecision decision = toolFreeChatClient.prompt()
                 .system("""
                         You are a classifier. Decide if answering the following
                         message well requires looking up specific implementation
@@ -62,7 +62,7 @@ public class CodeSentryService {
 
     @Tool(description = "Review a Java code snippet for bugs, code smells, and best-practice violations. Returns a structured review with severity-rated issues and an overall rating.")
     public CodeReview reviewCode(@ToolParam(description = "The Java code snippet to review") String code) {
-        return chatClient.prompt()
+        return toolFreeChatClient.prompt()
                 .system("""
                         You are a senior Java code reviewer. Analyze the given code
                         snippet for bugs, code smells, and best-practice violations.

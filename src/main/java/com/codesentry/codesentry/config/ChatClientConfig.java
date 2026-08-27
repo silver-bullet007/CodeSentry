@@ -21,7 +21,7 @@ public class ChatClientConfig {
     }
 
     @Bean
-    public ChatClient classifierChatClient(ChatClient.Builder chatClientBuilder, FileTools fileTools) {
+    public ChatClient toolFreeChatClient(ChatClient.Builder chatClientBuilder) {
         return chatClientBuilder.build();
     }
 
