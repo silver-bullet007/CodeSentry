@@ -96,6 +96,18 @@
     			</configuration>
 			</plugin>
 		</plugins>
+		<resources>
+			<resource>
+				<directory>src/main/java</directory>
+				<targetPath>codebase-source</targetPath>
+				<includes>
+					<include>**/*.java</include>
+				</includes>
+			</resource>
+			<resource>
+			<directory>src/main/resources</directory>
+			</resource>
+		</resources>
 	</build>
 
 </project>

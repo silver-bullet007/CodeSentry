@@ -2,7 +2,9 @@ package com.codesentry.codesentry.controller;
 
 import com.codesentry.codesentry.model.CodeReview;
 import com.codesentry.codesentry.service.CodeSentryService;
-
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
+import java.nio.charset.StandardCharsets;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -42,29 +44,25 @@ public class ChatController {
 
     @PostMapping("/ingest")
     public String ingest() {
-        Path baseDir = Paths.get("src/main/java/com/codesentry").toAbsolutePath().normalize();
-
         List<Document> documents = new ArrayList<>();
 
-        try (Stream<Path> paths = Files.walk(baseDir)) {
-            paths.filter(p -> p.toString().endsWith(".java"))
-                    .forEach(path -> {
-                        try {
-                            String content = Files.readString(path);
-                            String relativePath = baseDir.relativize(path).toString();
-                            Document doc = new Document(content, Map.of("source", relativePath));
-                            documents.add(doc);
-                        } catch (IOException e) {
-                            // skip unreadable files
-                        }
-                    });
+        try {
+            PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
+            Resource[] resources = resolver.getResources("classpath*:codebase-source/**/*.java");
+
+            for (Resource resource : resources) {
+                String content = new String(resource.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+                String fullPath = resource.getURI().toString();
+                String relativePath = fullPath
+                        .substring(fullPath.indexOf("codebase-source/") + "codebase-source/".length());
+                documents.add(new Document(content, Map.of("source", relativePath)));
+            }
         } catch (IOException e) {
-            return "Error walking directory: " + e.getMessage();
+            return "Error reading resources: " + e.getMessage();
         }
 
         TokenTextSplitter splitter = TokenTextSplitter.builder().build();
         List<Document> chunks = splitter.apply(documents);
-
         vectorStore.add(chunks);
 
         return "Ingested " + documents.size() + " files as " + chunks.size() + " chunks.";
