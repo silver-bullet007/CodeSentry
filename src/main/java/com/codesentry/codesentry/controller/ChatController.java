@@ -12,6 +12,10 @@ import java.util.Map;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.errors.GitAPIException;
+import java.io.File;
+import java.util.Comparator;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -42,29 +46,89 @@ public class ChatController {
         return codeSentryService.reviewCode(code);
     }
 
-    @PostMapping("/ingest")
-    public String ingest() {
-        List<Document> documents = new ArrayList<>();
-
-        try {
-            PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
-            Resource[] resources = resolver.getResources("classpath*:codebase-source/**/*.java");
-
-            for (Resource resource : resources) {
-                String content = new String(resource.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-                String fullPath = resource.getURI().toString();
-                String relativePath = fullPath
-                        .substring(fullPath.indexOf("codebase-source/") + "codebase-source/".length());
-                documents.add(new Document(content, Map.of("source", relativePath)));
-            }
-        } catch (IOException e) {
-            return "Error reading resources: " + e.getMessage();
-        }
-
-        TokenTextSplitter splitter = TokenTextSplitter.builder().build();
-        List<Document> chunks = splitter.apply(documents);
-        vectorStore.add(chunks);
-
-        return "Ingested " + documents.size() + " files as " + chunks.size() + " chunks.";
+@PostMapping("/ingest")
+public String ingest(@RequestParam String repoUrl) {
+    Path tempDir;
+    try {
+        tempDir = Files.createTempDirectory("codesentry-clone-");
+    } catch (IOException e) {
+        return "Error creating temp directory: " + e.getMessage();
     }
+
+    try {
+        Git.cloneRepository()
+                .setURI(repoUrl)
+                .setDirectory(tempDir.toFile())
+                .setDepth(1)
+                .call();
+    } catch (GitAPIException e) {
+        deleteRecursively(tempDir);
+        return "Error cloning repository: " + e.getMessage();
+    }
+
+    List<Document> documents = new ArrayList<>();
+    long totalSize = 0;
+    final long MAX_TOTAL_BYTES = 20 * 1024 * 1024; // 20MB cap
+    final int MAX_FILES = 500;
+
+    try (Stream<Path> paths = Files.walk(tempDir)) {
+        List<Path> matched = paths
+                .filter(Files::isRegularFile)
+                .filter(p -> !p.toString().contains(File.separator + ".git" + File.separator))
+                .filter(p -> hasAllowedExtension(p))
+                .limit(MAX_FILES)
+                .toList();
+
+        for (Path path : matched) {
+            long size = Files.size(path);
+            if (totalSize + size > MAX_TOTAL_BYTES) {
+                break;
+            }
+            totalSize += size;
+
+            try {
+                String content = Files.readString(path);
+                String relativePath = tempDir.relativize(path).toString();
+                documents.add(new Document(content, Map.of("source", relativePath, "corpus", "current")));
+            } catch (IOException e) {
+                // skip unreadable/binary files
+            }
+        }
+    } catch (IOException e) {
+        deleteRecursively(tempDir);
+        return "Error walking cloned repo: " + e.getMessage();
+    }
+
+    deleteRecursively(tempDir);
+
+    if (documents.isEmpty()) {
+        return "No ingestible files found in repository.";
+    }
+
+    vectorStore.delete("corpus == 'current'");
+    TokenTextSplitter splitter = TokenTextSplitter.builder().build();
+    List<Document> chunks = splitter.apply(documents);
+    vectorStore.add(chunks);
+
+    return "Ingested " + documents.size() + " files as " + chunks.size() + " chunks from " + repoUrl;
+}
+
+private boolean hasAllowedExtension(Path path) {
+    String name = path.toString().toLowerCase();
+    return name.endsWith(".java") || name.endsWith(".py") || name.endsWith(".js")
+            || name.endsWith(".ts") || name.endsWith(".md") || name.endsWith(".json")
+            || name.endsWith(".yaml") || name.endsWith(".yml");
+}
+
+private void deleteRecursively(Path dir) {
+    try (Stream<Path> paths = Files.walk(dir)) {
+        paths.sorted(Comparator.reverseOrder()).forEach(p -> {
+            try {
+                Files.delete(p);
+            } catch (IOException ignored) {
+            }
+        });
+    } catch (IOException ignored) {
+    }
+}
 }
