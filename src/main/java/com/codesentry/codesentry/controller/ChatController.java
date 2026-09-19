@@ -108,7 +108,22 @@ public String ingest(@RequestParam String repoUrl) {
     vectorStore.delete("corpus == 'current'");
     TokenTextSplitter splitter = TokenTextSplitter.builder().build();
     List<Document> chunks = splitter.apply(documents);
-    vectorStore.add(chunks);
+    final int BATCH_SIZE = 40;
+    final long DELAY_MS = 15000; // 15 seconds between batches, safely under 100/min
+
+    for (int i = 0; i < chunks.size(); i += BATCH_SIZE) {
+        List<Document> batch = chunks.subList(i, Math.min(i + BATCH_SIZE, chunks.size()));
+        vectorStore.add(batch);
+
+        if (i + BATCH_SIZE < chunks.size()) {
+            try {
+                Thread.sleep(DELAY_MS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return "Ingestion interrupted.";
+            }
+        }
+    }
 
     return "Ingested " + documents.size() + " files as " + chunks.size() + " chunks from " + repoUrl;
 }
