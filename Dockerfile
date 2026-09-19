@@ -1,7 +1,7 @@
 FROM node:20-alpine AS frontend-build
 RUN apk add --no-cache git
 WORKDIR /frontend
-RUN git clone --depth 1 https://github.com/<your-username>/codesentry-frontend.git .
+RUN git clone --depth 1 https://github.com/silver-bullet007/codesentry-frontend.git .
 RUN npm install
 RUN npm run build
 
