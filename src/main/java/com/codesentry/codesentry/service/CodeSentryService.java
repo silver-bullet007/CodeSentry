@@ -34,20 +34,28 @@ public class CodeSentryService {
             @ToolParam(description = "The question to ask") String message,
             @ToolParam(description = "A unique ID to keep this conversation's history separate from others") String conversationId) {
 
-        RagDecision decision = toolFreeChatClient.prompt()
-                .system("""
-                        You are a classifier. Decide if answering the following
-                        message well requires looking up specific implementation
-                        details from a Java codebase (e.g. how something is
-                        implemented, what a class/method does, code structure).
-                        Casual, conversational, or general messages do not need this.
-                        """)
-                .user(message)
-                .options(GoogleGenAiChatOptions.builder()
-                        .temperature(0.0)
-                        .responseMimeType("application/json"))
-                .call()
-                .entity(RagDecision.class);
+        RagDecision decision;
+        
+        try{
+                decision = toolFreeChatClient.prompt()
+                        .system("""
+                                You are a classifier. Decide if answering the following
+                                message well requires looking up specific implementation
+                                details from a Java codebase (e.g. how something is
+                                implemented, what a class/method does, code structure).
+                                Casual, conversational, or general messages do not need this.
+                                """)
+                        .user(message)
+                        .options(GoogleGenAiChatOptions.builder()
+                                .temperature(0.0)
+                                .responseMimeType("application/json"))
+                        .call()
+                        .entity(RagDecision.class);
+        }
+        catch(Exception e){
+                decision = RagDecision.YES;
+        }
+
 
         var promptSpec = chatClient.prompt()
                 .advisors(messageChatMemoryAdvisor)
