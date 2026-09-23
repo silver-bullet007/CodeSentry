@@ -5,13 +5,13 @@
 **Chat with any public GitHub repository.**
 An AI-powered codebase intelligence platform built with Spring Boot, Spring AI, and RAG — ask questions, get code reviews, and explore any codebase through a live chat interface.
 
-[![Live Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://codesentry-v6kv.onrender.com)
+[![Live Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://codesentry-production.up.railway.app/)
 [![Java](https://img.shields.io/badge/Java-21-orange)](https://openjdk.org/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.1-brightgreen)](https://spring.io/projects/spring-boot)
 [![Spring AI](https://img.shields.io/badge/Spring%20AI-2.0-6DB33F)](https://spring.io/projects/spring-ai)
 [![License](https://img.shields.io/badge/license-MIT-blue)](#license)
 
-[**🚀 Live Demo**](https://codesentry-v6kv.onrender.com) · [Frontend Repo](https://github.com/silver-bullet007/CodeSentry-Frontend) · [Report a Bug](../../issues)
+[**🚀 Live Demo**](https://codesentry-production.up.railway.app/) · [Frontend Repo](https://github.com/silver-bullet007/CodeSentry-Frontend) · [Report a Bug](../../issues)
 
 </div>
 
@@ -63,7 +63,7 @@ flowchart LR
 
 ## 🚀 Try it live
 
-**[codesentry-v6kv.onrender.com →](https://codesentry-v6kv.onrender.com)**
+**[codesentry-production.up.railway.app →](https://codesentry-production.up.railway.app/)**
 
 1. Head to the **Ingest** tab and load one of the suggested repositories (or paste any public GitHub URL)
 2. Switch to the **Chat** tab and ask a question — or click one of the suggested prompts
